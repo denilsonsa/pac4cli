@@ -1,0 +1,9 @@
+GET http://127.0.0.1:23132/ HTTP/1.0
+Host: 127.0.0.1:23132
+User-Agent: runtests.py for pac4cli
+Accept: text/plain
+Accept: text/html
+Connection: close
+X-Request-ID: 1234567890
+X-Foo-Bar: Request Foo Bar
+

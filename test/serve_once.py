@@ -24,3 +24,5 @@ if __name__ == "__main__":
     data = data.replace(b"\n", b"\r\n")
     conn.sendall(data)
 
+    sys.stdout.buffer.write(conn.recv(4096))
+    conn.close()

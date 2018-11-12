@@ -1,0 +1,11 @@
+HTTP/1.0 200 OK
+Server: fake server for pac4cli runtests.py
+Date: Wed, 12 Nov 2018 18:27:36 GMT
+Content-Language: en
+Content-Language: en-US
+Content-Type: text/plain
+Content-Length: 27
+X-Powered-By: Absolutely nothing
+X-Foo-Bar: Foobar
+
+Hello from fake proxy no 3!

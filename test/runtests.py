@@ -15,17 +15,19 @@ import subprocess
 import dbus
 import dbusmock
 import os
+import re
 
 from time import sleep
 
 import plumbum
 from plumbum import FG, BG
 
-from plumbum.cmd import curl
+from plumbum.cmd import curl, cat
 
-python     = plumbum.local["env/bin/python"]
-serve_once = python["test/serve_once.py"]
-pac4cli    = python["-m", "pac4cli", "--loglevel", "DEBUG"]
+python       = plumbum.local["env/bin/python"]
+serve_once   = python["test/serve_once.py"]
+request_once = python["test/request_once.py"]
+pac4cli      = python["-m", "pac4cli", "--loglevel", "DEBUG"]
 
 testdir = plumbum.local.path(os.path.dirname(os.path.abspath(__file__)))
 
@@ -83,6 +85,30 @@ class TestProxyConfigurations(dbusmock.DBusTestCase):
         finally:
             proxy2.proc.kill()
             proxy1.proc.kill()
+
+    def test_proxied_http_headers(self):
+        proxy = pac4cli["-F", "DIRECT", "-p", "23131"] & BG
+        fake_server = (serve_once[23132] < testdir / "fake-proxy-3-response") & BG
+
+        sleep(3)
+        try:
+            response = (request_once["127.0.0.1", 23131] < testdir / "fake-proxy-3-request")().rstrip().splitlines()
+            fake_server.wait()
+            request = fake_server.stdout.rstrip().splitlines()
+
+            expected_request = cat(testdir / "fake-proxy-3-request").rstrip().splitlines()
+            expected_response = cat(testdir / "fake-proxy-3-response").rstrip().splitlines()
+
+            # When using a proxy, the HTTP client requests
+            # "GET http://127.0.0.1:23132/ HTTP/1.0",
+            # and the proxy rewrites that as "GET / HTTP/1.0"
+            expected_request[0] = re.sub(r'http://[^ ]+', '/', expected_request[0])
+
+            self.assertEqual(request, expected_request)
+            self.assertEqual(response, expected_response)
+        finally:
+            proxy.proc.kill()
+            fake_server.proc.kill()
 
     def test_proxy_from_dhcp_wpad(self):
         # set up mock dbus with dhcp settings
